@@ -17,12 +17,14 @@ def affine_forward(x, w, b):
   - out: output, of shape (N, M)
   - cache: (x, w, b)
   """
-  out = None
+  N = x.shape[0]
+  X = np.reshape(x, (N, -1))
+  out = np.dot(X, w) + b
   #############################################################################
   # TODO: Implement the affine forward pass. Store the result in out. You     #
   # will need to reshape the input into rows.                                 #
   #############################################################################
-  pass
+  # pass
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
@@ -45,8 +47,14 @@ def affine_backward(dout, cache):
   - dw: Gradient with respect to w, of shape (D, M)
   - db: Gradient with respect to b, of shape (M,)
   """
-  x, w, b = cache
   dx, dw, db = None, None, None
+  x, w, b = cache
+  N = x.shape[0]
+  X = np.reshape(x, (N, -1))
+  dw = np.dot(X.T, dout)
+  dx = np.dot(dout, w.T)
+  dx = np.reshape(dx, x.shape)
+  db = np.sum(dout, axis = 0)
   #############################################################################
   # TODO: Implement the affine backward pass.                                 #
   #############################################################################
@@ -69,6 +77,9 @@ def relu_forward(x):
   - cache: x
   """
   out = None
+  mask = x < 0
+  out = x.copy()
+  out[mask] = 0
   #############################################################################
   # TODO: Implement the ReLU forward pass.                                    #
   #############################################################################
@@ -92,15 +103,28 @@ def relu_backward(dout, cache):
   - dx: Gradient with respect to x
   """
   dx, x = None, cache
+  mask = x < 0
+  dx = dout
+  dx[mask] = 0
   #############################################################################
   # TODO: Implement the ReLU backward pass.                                   #
   #############################################################################
-  pass
+  # pass
   #############################################################################
   #                             END OF YOUR CODE                              #
   #############################################################################
   return dx
 
+def convolve(data_point, filter, stride):
+  """
+  Input:
+  - data_point: Shape is (C, H, W)
+  - filter: Shape is (C, HH, WW)
+  - stride: Integer
+  Output:
+  - Integer whose value is convolution
+  """
+  
 
 def conv_forward_naive(x, w, b, conv_param):
   """
@@ -125,6 +149,13 @@ def conv_forward_naive(x, w, b, conv_param):
     W' = 1 + (W + 2 * pad - WW) / stride
   - cache: (x, w, b, conv_param)
   """
+  stride = conv_param['stride']
+  pad = conv_param['pad']
+  for data_point in x:
+    data_point_padded = np.pad(data_point, ((pad,pad), (pad,pad)), 'constant', constant_values=(0))
+    for filter in w:
+      convolve(data_point_padded, filter)
+
   out = None
   #############################################################################
   # TODO: Implement the convolutional forward pass.                           #

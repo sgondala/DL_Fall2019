@@ -84,7 +84,8 @@ def two_layer_net(X, model, y=None, reg=0.0):
 
   # compute the forward pass
   hidden = np.dot(X, W1) + b1 # N x H + H x 1 (Broadcasting)
-  hidden[hidden < 0] = 0 # RelU
+  mask = hidden < 0
+  hidden[mask] = 0 # RelU
   relu_out = hidden # N x H
   scores = np.dot(relu_out, W2) + b2 # N x C
   #############################################################################
@@ -117,12 +118,18 @@ def two_layer_net(X, model, y=None, reg=0.0):
   #############################################################################
 
   # compute the gradients
-  grads = model
+  grads = {}
   backprop_start = softmax_out # N x C
   backprop_start[np.arange(N), y] -= 1
   grads['W2'] = (1/N) * np.dot(relu_out.T, backprop_start) # H x N, N x C = H x C
   grads['W2'] += reg*W2
   grads['b2'] = (1/N)*np.sum(backprop_start, axis = 0)
+  grad_relu_out = np.dot(backprop_start, model['W2'].T) # N * C, C * H = N * H
+  grad_relu_in = grad_relu_out
+  grad_relu_in[mask] = 0
+  grads['W1'] = (1/N) * np.dot(X.T, grad_relu_in) # D * N, N * H = D * H
+  grads['W1'] += reg*W1
+  grads['b1'] = (1/N) * np.sum(grad_relu_in, axis = 0)
 
   #############################################################################
   # TODO: Compute the backward pass, computing the derivatives of the weights #

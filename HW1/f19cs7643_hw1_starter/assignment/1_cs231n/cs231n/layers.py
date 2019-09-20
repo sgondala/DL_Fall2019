@@ -263,14 +263,22 @@ def max_pool_forward_naive(x, pool_param):
   - out: Output data
   - cache: (x, pool_param)
   """
-  out = None
-  #############################################################################
-  # TODO: Implement the max pooling forward pass                              #
-  #############################################################################
-  pass
-  #############################################################################
-  #                             END OF YOUR CODE                              #
-  #############################################################################
+  N, C, H, W = x.shape
+  pool_height = pool_param['pool_height']
+  pool_width = pool_param['pool_width']
+  stride = pool_param['stride']
+  out = np.zeros((N, C, 1 + (H - pool_height) // stride, 1 + (W - pool_width) // stride))
+
+  for index_point in range(N):
+    for index_channel in range(C):
+      height_start = 0
+      while height_start + pool_height <= H:
+        width_start = 0
+        while width_start + pool_width <= W:
+          out[index_point][index_channel][height_start//stride][width_start//stride] = np.max(x[index_point][index_channel][height_start:height_start + pool_height, width_start:width_start + pool_width])
+          width_start += stride
+        height_start += stride
+
   cache = (x, pool_param)
   return out, cache
 
@@ -286,14 +294,24 @@ def max_pool_backward_naive(dout, cache):
   Returns:
   - dx: Gradient with respect to x
   """
-  dx = None
-  #############################################################################
-  # TODO: Implement the max pooling backward pass                             #
-  #############################################################################
-  pass
-  #############################################################################
-  #                             END OF YOUR CODE                              #
-  #############################################################################
+  x, pool_param = cache
+  dx = np.zeros_like(x)
+  N, C, H, W = x.shape
+  pool_height = pool_param['pool_height']
+  pool_width = pool_param['pool_width']
+  stride = pool_param['stride']
+
+  for index_point in range(N):
+    for index_channel in range(C):
+      height_start = 0
+      while height_start + pool_height <= H:
+        width_start = 0
+        while width_start + pool_width <= W:
+          max_index = np.argmax(x[index_point][index_channel][height_start:height_start + pool_height, width_start:width_start + pool_width])
+          a,b = np.unravel_index(max_index, (pool_height, pool_width))
+          dx[index_point][index_channel][a + height_start][b + width_start] = dout[index_point][index_channel][height_start//stride][width_start//stride]
+          width_start += stride
+        height_start += stride
   return dx
 
 

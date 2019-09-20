@@ -118,13 +118,38 @@ def relu_backward(dout, cache):
 def convolve(data_point, filter, stride):
   """
   Input:
-  - data_point: Shape is (C, H, W)
-  - filter: Shape is (C, HH, WW)
+  - data_point: Shape is (C, H, W) or (H, W)
+  - filter: Shape is (C, HH, WW) or (HH, WW)
   - stride: Integer
   Output:
   - Integer whose value is convolution
   """
+  output = 0
+  r = 0
+  if len(filter.shape) == 2:
+    filter_here = np.reshape(filter, (1, *filter.shape))
+    data_point_here = np.reshape(data_point, (1, *data_point.shape))
+  elif len(filter.shape) == 3:
+    filter_here = filter
+    data_point_here = data_point
   
+  assert filter_here.shape[0] == data_point_here.shape[0]
+
+  C, HH, WW = filter_here.shape
+  _, H, W = data_point_here.shape
+  output = np.zeros((1 + (H - HH) // stride, 1 + (W - WW) // stride))
+  r_index = 0
+  while r + HH <= H:
+    c = 0
+    c_index = 0
+    while c + WW <= W:
+      value_here = np.sum(filter_here[:, :, :] * data_point_here[:, r:r + HH, c:c + WW])
+      output[r_index][c_index] = value_here
+      c += stride
+      c_index += 1
+    r += stride
+    r_index += 1
+  return output
 
 def conv_forward_naive(x, w, b, conv_param):
   """
@@ -149,22 +174,22 @@ def conv_forward_naive(x, w, b, conv_param):
     W' = 1 + (W + 2 * pad - WW) / stride
   - cache: (x, w, b, conv_param)
   """
+  assert x.shape[1] == w.shape[1]
   stride = conv_param['stride']
   pad = conv_param['pad']
+  N, C, H, W = x.shape
+  F, _, HH, WW = w.shape
+  out = np.zeros((N, F, 1 + (H + 2 * pad - HH) // stride, 1 + (W + 2 * pad - WW) // stride))
+  index_point = 0
   for data_point in x:
-    data_point_padded = np.pad(data_point, ((pad,pad), (pad,pad)), 'constant', constant_values=(0))
+    data_point_padded = np.pad(data_point, ((0,0), (pad,pad), (pad,pad)), 'constant', constant_values=(0))
+    index_filter = 0
     for filter in w:
-      convolve(data_point_padded, filter)
-
-  out = None
-  #############################################################################
-  # TODO: Implement the convolutional forward pass.                           #
-  # Hint: you can use the function np.pad for padding.                        #
-  #############################################################################
-  pass
-  #############################################################################
-  #                             END OF YOUR CODE                              #
-  #############################################################################
+      value_for_filter = convolve(data_point_padded, filter, stride)
+      value_for_filter += b[index_filter]
+      out[index_point][index_filter] = value_for_filter
+      index_filter += 1
+    index_point += 1
   cache = (x, w, b, conv_param)
   return out, cache
 
@@ -183,13 +208,43 @@ def conv_backward_naive(dout, cache):
   - db: Gradient with respect to b
   """
   dx, dw, db = None, None, None
-  #############################################################################
-  # TODO: Implement the convolutional backward pass.                          #
-  #############################################################################
-  pass
-  #############################################################################
-  #                             END OF YOUR CODE                              #
-  #############################################################################
+  x, w, b, conv_param = cache
+  print("X shape", x.shape)
+  print("W shape", w.shape)
+  print("dout shape", dout.shape)
+
+  stride = conv_param['stride']
+  pad = conv_param['pad']
+  
+  dw = np.zeros_like(w)
+
+  for index_point in range(len(x)):
+    data_point_padded = np.pad(x[index_point], ((0,0), (pad,pad), (pad,pad)), 'constant', constant_values=(0))
+    dout_here = dout[index_point]
+    for index_filter in range(len(w)):
+      dout_filter = dout_here[index_filter]
+      for index_channel in range(len(data_point_padded)):
+        channel = data_point_padded[index_channel]
+        dw_channel = convolve(channel, dout_filter, stride)
+        dw[index_filter][index_channel] += dw_channel
+
+  db = dout.sum(0).sum(1).sum(1)
+  
+  dx = np.zeros_like(x)
+  for index_point in range(len(dout)):
+    dout_point = dout[index_point]
+    data_point = x[index_point]
+    for index_filter in range(len(w)):
+      current_filter = w[index_filter]
+      dout_filter = dout_point[index_filter]
+      for index_channel in range(len(current_filter)):
+        filter_channel = current_filter[index_channel].copy()
+        filter_channel = np.flip(filter_channel, (0,1))
+        pad_size = (filter_channel.shape[0] - 1) // 2
+        dout_filter_padded = np.pad(dout_filter, ((pad_size,pad_size), (pad_size,pad_size)), 'constant', constant_values=(0))
+        convolution_out = convolve(dout_filter_padded, filter_channel, stride)
+        dx[index_point][index_channel] += convolution_out
+
   return dx, dw, db
 
 
@@ -292,3 +347,7 @@ def softmax_loss(x, y):
   dx /= N
   return loss, dx
 
+if __name__ == '__main__':
+  data_point = np.array([[[0, 1, 2, 3], [4,5,6,7], [8,9,10,11], [12,13,14,15]]])
+  filter = np.array([[[0, 1, 2], [3, 4, 5], [6, 7, 8]]])
+  print(convolve(data_point, filter, 2))

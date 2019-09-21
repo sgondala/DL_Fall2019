@@ -67,7 +67,7 @@ class ClassifierTrainer(object):
     train_acc_history = []
     val_acc_history = []
     for it in range(num_iters):
-      if it % 10 == 0:  print('starting iteration ', it)
+      if it % 100 == 0:  print('starting iteration ', it)
 
       # get batch of data
       if sample_batches:
@@ -91,9 +91,9 @@ class ClassifierTrainer(object):
         elif update == 'momentum':
           if not p in self.step_cache: 
             self.step_cache[p] = np.zeros(grads[p].shape)
-          current_value = momentum * self.step_cache[p] + (1-momentum) * grads[p]
+          current_value = momentum * self.step_cache[p] + learning_rate * grads[p]
           self.step_cache[p] = current_value
-          dx = - current_value
+          dx = -current_value
         elif update == 'rmsprop':
           decay_rate = 0.99 # you could also make this an option
           if not p in self.step_cache: 

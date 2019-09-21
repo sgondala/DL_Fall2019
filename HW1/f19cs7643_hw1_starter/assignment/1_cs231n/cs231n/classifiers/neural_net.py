@@ -1,6 +1,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+import torch
+import torch.nn as nn
+
 def softmax_rows(X):
   """
   Softmax of X
@@ -83,11 +86,12 @@ def two_layer_net(X, model, y=None, reg=0.0):
   N, D = X.shape
 
   # compute the forward pass
-  hidden = np.dot(X, W1) + b1 # N x H + H x 1 (Broadcasting)
+  hidden = np.dot(X, W1) + b1 # N x H + H (Broadcasting)
   mask = hidden < 0
-  hidden[mask] = 0 # RelU
+  hidden[mask] = 0
   relu_out = hidden # N x H
   scores = np.dot(relu_out, W2) + b2 # N x C
+  # print("W2", W2)
   #############################################################################
   # TODO: Perform the forward pass, computing the class scores for the input. #
   # Store the result in the scores variable, which should be an array of      #
@@ -98,24 +102,19 @@ def two_layer_net(X, model, y=None, reg=0.0):
   if y is None:
     return scores
 
-  # compute the loss
+  # softmax_function = nn.Softmax(dim = 1)
+  # softmax_out = softmax_function(torch.from_numpy(scores)).numpy()
   softmax_out = softmax_rows(scores)
-  softmax_loss  = -(1/N)*np.sum(np.log(softmax_out[np.arange(N), y] + 1e-6)) # Softmax loss
-  regularization_loss = np.sum(W1*W1) + np.sum(W2*W2)
-  regularization_loss *= 0.5*reg
+  softmax_out += 1e-6
+  softmax_loss  = -(1/N)*np.sum(np.log(softmax_out[np.arange(N), y])) # Softmax loss
+  
+  # scores -= np.max(scores, axis=1, keepdims=True) # avoid numeric instability
+  # scores_exp = np.exp(scores)
+  # softmax_out = scores_exp / np.sum(scores_exp, axis=1, keepdims=True) 
+  # softmax_loss = (1/N)*(np.sum(-np.log(softmax_out[np.arange(N), y] + 1e-6)))
+  
+  regularization_loss = 0.5 * reg * (np.sum(W1*W1) + np.sum(W2*W2))
   loss = softmax_loss + regularization_loss
-
-  #############################################################################
-  # TODO: Finish the forward pass, and compute the loss. This should include  #
-  # both the data loss and L2 regularization for W1 and W2. Store the result  #
-  # in the variable loss, which should be a scalar. Use the Softmax           #
-  # classifier loss. So that your results match ours, multiply the            #
-  # regularization loss by 0.5                                                #
-  #############################################################################
-  # pass
-  #############################################################################
-  #                              END OF YOUR CODE                             #
-  #############################################################################
 
   # compute the gradients
   grads = {}
@@ -131,36 +130,4 @@ def two_layer_net(X, model, y=None, reg=0.0):
   grads['W1'] += reg*W1
   grads['b1'] = (1/N) * np.sum(grad_relu_in, axis = 0)
 
-  #############################################################################
-  # TODO: Compute the backward pass, computing the derivatives of the weights #
-  # and biases. Store the results in the grads dictionary. For example,       #
-  # grads['W1'] should store the gradient on W1, and be a matrix of same size #
-  #############################################################################
-  # pass
-  #############################################################################
-  #                              END OF YOUR CODE                             #
-  #############################################################################
-
   return loss, grads
-
-
-if __name__ == '__main__':
-  # pass
-  N = 3
-  C = 5
-  W = np.random.randn(N, C)
-  # print(W)
-  # 
-  print(np.reshape(np.max(W,1), (N,1)))
-  W = W - np.reshape(np.max(W,1), (N,1))
-  # print(W)
-
-  # B = np.array([1,2,3,4,5])
-  # print(W + B)
-  # W = np.array([[1,2,3], [-1,2,3]])
-  # W[W < 0] = 0
-  # print(W)
-
-  # model = init_two_layer_model(2,5,10)
-  # for matrix in model:
-  #   print(model[matrix])

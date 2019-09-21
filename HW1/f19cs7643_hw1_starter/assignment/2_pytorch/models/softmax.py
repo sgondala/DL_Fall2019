@@ -47,10 +47,12 @@ class Softmax(nn.Module):
         scores = None
         N, C, H, W = images.shape
         images_in = torch.reshape(images, (N, -1))
-        linear_out = self.linear_layer(images_in) # N x num_classes
-        softmax = nn.Softmax(dim = 1)
-        softmax_out = softmax(linear_out)
-        return softmax_out
+        scores = self.linear_layer(images_in) # N x num_classes
+        return scores
+        # softmax = nn.Softmax(dim = 1)
+        # softmax_out = softmax(linear_out)
+        # return softmax_out
+        # return linear_out
         
 
         #############################################################################

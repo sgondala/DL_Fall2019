@@ -4,15 +4,18 @@
 #       number of epochs, weigh decay factor, momentum, batch size, learning 
 #       rate mentioned here to achieve good performance
 #############################################################################
+kernel_size=3
+hidden_dim=5
+epochs=5
 python -u train.py \
     --model convnet \
-    --kernel-size 1 \
-    --hidden-dim 10 \
-    --epochs 1 \
+    --kernel-size $kernel_size \
+    --hidden-dim $hidden_dim \
+    --epochs $epochs \
     --weight-decay 0.0 \
     --momentum 0.0 \
     --batch-size 512 \
-    --lr 0.01 | tee convnet.log
+    --lr 0.001 | tee convnet_${kernel_size}_${hidden_dim}_${epochs}.log
 #############################################################################
 #                             END OF YOUR CODE                              #
 #############################################################################

@@ -71,9 +71,17 @@ transform = transforms.Compose([
                  transforms.ToTensor(),
                  transforms.Normalize(cifar10_mean_color, cifar10_std_color),
             ])
+
+transform_train = transforms.Compose([
+    transforms.RandomCrop(32, padding=2),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.Normalize(cifar10_mean_color, cifar10_std_color),
+])
+
 # Datasets
 train_dataset = CIFAR10(args.cifar10_dir, split='train', download=True,
-                        transform=transform)
+                        transform=transform_train)
 val_dataset = CIFAR10(args.cifar10_dir, split='val', download=True,
                         transform=transform)
 test_dataset = CIFAR10(args.cifar10_dir, split='test', download=True,

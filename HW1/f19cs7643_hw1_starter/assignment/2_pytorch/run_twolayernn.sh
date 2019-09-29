@@ -6,12 +6,12 @@
 #############################################################################
 python -u train.py \
     --model twolayernn \
-    --hidden-dim 20 \
-    --epochs 10 \
-    --weight-decay 0.0 \
-    --momentum 0.0 \
-    --batch-size 512 \
-    --lr 0.02 | tee twolayernn.log
+    --hidden-dim 40 \
+    --epochs 5 \
+    --weight-decay 0.95 \
+    --momentum 0.9 \
+    --batch-size 256 \
+    --lr 0.0001 | tee twolayernn.log
 #############################################################################
 #                             END OF YOUR CODE                              #
 #############################################################################

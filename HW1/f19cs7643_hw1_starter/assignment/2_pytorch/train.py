@@ -67,21 +67,29 @@ im_size = (3, 32, 32)
 cifar10_mean_color = [0.49131522, 0.48209435, 0.44646862]
 # std dev of color across training images
 cifar10_std_color = [0.01897398, 0.03039277, 0.03872553]
+
 transform = transforms.Compose([
                  transforms.ToTensor(),
                  transforms.Normalize(cifar10_mean_color, cifar10_std_color),
             ])
 
 transform_train = transforms.Compose([
-    transforms.RandomCrop(32, padding=2),
+    transforms.RandomCrop(32, padding=4),
     transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
     transforms.Normalize(cifar10_mean_color, cifar10_std_color),
 ])
 
 # Datasets
-train_dataset = CIFAR10(args.cifar10_dir, split='train', download=True,
+train_dataset = None 
+
+if args.model == 'mymodel':
+    train_dataset = CIFAR10(args.cifar10_dir, split='train', download=True,
                         transform=transform_train)
+else:
+    train_dataset = CIFAR10(args.cifar10_dir, split='train', download=True,
+                        transform=transform)
+
 val_dataset = CIFAR10(args.cifar10_dir, split='val', download=True,
                         transform=transform)
 test_dataset = CIFAR10(args.cifar10_dir, split='test', download=True,
@@ -112,7 +120,11 @@ criterion = F.cross_entropy
 if args.cuda:
     model.cuda()
 
-optimizer = torch.optim.SGD(model.parameters(), lr=args.lr,momentum=args.momentum, weight_decay=args.weight_decay)
+optimizer = None
+if args.model == 'mymodel':
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+else:
+    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr,momentum=args.momentum, weight_decay=args.weight_decay)
 
 #############################################################################
 # TODO: Initialize an optimizer from the torch.optim package using the

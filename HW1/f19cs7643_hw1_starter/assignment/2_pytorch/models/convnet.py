@@ -45,20 +45,8 @@ class CNN(nn.Module):
             A torch Variable of size (N, n_classes) specifying the score
             for each example and category.
         '''
-        # scores = None
         scores = self.conv(images)
-        # print('scores', scores.shape)
         relu_here = nn.ReLU()
         scores = relu_here(scores)
         scores = self.linear_layer(scores.reshape((images.shape[0], -1)))
-        # print('scores', scores.shape)
-
-        #############################################################################
-        # TODO: Implement the forward pass. This should take few lines of code.
-        #############################################################################
-        pass
-        #############################################################################
-        #                             END OF YOUR CODE                              #
-        #############################################################################
         return scores
-

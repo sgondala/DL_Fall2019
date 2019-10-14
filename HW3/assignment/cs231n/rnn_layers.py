@@ -82,7 +82,7 @@ def rnn_forward(x, h0, Wx, Wh, b):
     - h: Hidden states for the entire timeseries, of shape (N, T, H).
     - cache: Values needed in the backward pass
     """
-    h, cache = None, None
+    h, cache = None, (x, h0, Wx, Wh, b)
     N, T, D = x.shape
     H = len(b)
 

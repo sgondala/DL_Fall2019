@@ -82,8 +82,8 @@ def rnn_forward(x, h0, Wx, Wh, b):
     - h: Hidden states for the entire timeseries, of shape (N, T, H).
     - cache: Values needed in the backward pass
     """
-    h, cache = None, (x, h0, Wx, Wh, b)
-    N, T, D = x.shape
+    
+    N, T, _ = x.shape
     H = len(b)
 
     hidden_state = h0
@@ -93,6 +93,7 @@ def rnn_forward(x, h0, Wx, Wh, b):
         hidden_state, _ = rnn_step_forward(x_current, hidden_state, Wx, Wh, b)
         hidden_states_list[:, timestep, :] = hidden_state
 
+    cache = (hidden_states_list, x, h0, Wx, Wh, b)
     return hidden_states_list, cache
 
 
@@ -110,7 +111,25 @@ def rnn_backward(dh, cache):
     - dWh: Gradient of hidden-to-hidden weights, of shape (H, H)
     - db: Gradient of biases, of shape (H,)
     """
+
+    raise NotImplementedError
+    # TODO: Revisit this
+
     dx, dh0, dWx, dWh, db = None, None, None, None, None
+    # hidden_states_list, x, h0, Wx, Wh, b = cache
+
+
+    # # X is of the shape N * T * D 
+    # N, T, D = x.shape
+    # dWh = np.zeros((D, H))
+
+    # hidden_state_prev = h0
+    # for t in range(T):
+    #     cache_single_step = (hidden_states_list[:, t, :], x[:, t, :], )
+    #     _, _, _, dWh_here, _ = rnn_step_backward(dh[:, t, :], (hidden_states_list[:, t, :], x[:, t, :], hidden_state_prev, Wx, Wh))
+    #     hidden_state_prev = hidden_states_list[:, t, :]
+    #     dWh += dWh_here
+
 
     ##############################################################################
     # TODO: Implement the backward pass for a vanilla RNN running an entire      #
@@ -139,7 +158,7 @@ def word_embedding_forward(x, W):
     - out: Array of shape (N, T, D) giving word vectors for all input words.
     - cache: Values needed for the backward pass
     """
-    out, cache = None, None
+    out, cache = W[x], (x, W)
     ##############################################################################
     # TODO: Implement the forward pass for word embeddings.                      #
     #                                                                            #
@@ -167,17 +186,13 @@ def word_embedding_backward(dout, cache):
     Returns:
     - dW: Gradient of word embedding matrix, of shape (V, D).
     """
-    dW = None
-    ##############################################################################
-    # TODO: Implement the backward pass for word embeddings.                     #
-    #                                                                            #
-    # Note that Words can appear more than once in a sequence.                   #
-    # HINT: Look up the function np.add.at                                       #
-    ##############################################################################
-    pass
-    ##############################################################################
-    #                               END OF YOUR CODE                             #
-    ##############################################################################
+    x, W = cache
+    _, D = W.shape
+
+    dW = np.zeros_like(W)
+    indices = x.reshape(-1)
+    np.add.at(dW, indices, dout.reshape(-1, D))
+    
     return dW
 
 

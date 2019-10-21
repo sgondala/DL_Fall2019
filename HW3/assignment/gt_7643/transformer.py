@@ -18,7 +18,8 @@ class ClassificationTransformer(nn.Module):
     sequences of length T, has an hidden dimension of H, uses word vectors
     also of dimension H, and operates on minibatches of size N.
     """
-    def __init__(self, word_to_ix, hidden_dim=128, num_heads=2, dim_feedforward=2048, dim_k=96, dim_v=96, dim_q=96, max_length=43):
+    def __init__(self, word_to_ix, hidden_dim=128, num_heads=2, 
+        dim_feedforward=2048, dim_k=96, dim_v=96, dim_q=96, max_length=43):
         '''
         :param word_to_ix: dictionary mapping words to unique indices
         :param hidden_dim: the dimensionality of the output embeddings that go into the final layer
@@ -43,12 +44,13 @@ class ClassificationTransformer(nn.Module):
         self.dim_q = dim_q
         
         seed_torch(0)
-        
+
         ##############################################################################
         # Deliverable 1: Initialize what you need for the embedding lookup (1 line). #
         # Hint: you will need to use the max_length parameter above.                 #
         ##############################################################################
-
+        self.token_embedding = nn.Embedding(num_embeddings = self.vocab_size, embedding_dim = self.hidden_dim)
+        self.positional_encoding = nn.Embedding(num_embeddings = self.max_length, embedding_dim = self.hidden_dim)
         
         ##############################################################################
         #                               END OF YOUR CODE                             #
@@ -124,7 +126,10 @@ class ClassificationTransformer(nn.Module):
         :param inputs: intTensor of shape (N,T)
         :returns embeddings: floatTensor of shape (N,T,H)
         """
-        embeddings = None
+        N, T = inputs.shape
+        embeddings = self.token_embedding(inputs)
+        embeddings += self.positional_encoding(torch.arange(T))
+
         #############################################################################
         # Deliverable 1: Implement the embedding lookup.                            #
         # Note: word_to_ix has keys from 0 to self.vocab_size - 1                   #

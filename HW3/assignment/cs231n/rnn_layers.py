@@ -247,6 +247,8 @@ def lstm_step_forward(x, prev_h, prev_c, Wx, Wh, b):
     next_c = f * prev_c + i * g
     next_h = o * np.tanh(next_c)
 
+    cache = (i, f, o, g, x, prev_h, prev_c, Wx, Wh, next_c)
+
     return next_h, next_c, cache
 
 
@@ -274,7 +276,29 @@ def lstm_step_backward(dnext_h, dnext_c, cache):
     # HINT: For sigmoid and tanh you can compute local derivatives in terms of  #
     # the output value from the nonlinearity.                                   #
     #############################################################################
-    pass
+    
+    i, f, o, g, x, prev_h, prev_c, Wx, Wh, next_c = cache
+
+    dnext_c = dnext_c + dnext_h * o * (1 -  np.tanh(next_c) ** 2)
+    do = dnext_h * np.tanh(next_c)
+    dprev_c = dnext_c * f
+    df = dnext_c * prev_c
+    di = dnext_c * g
+    dg = dnext_c * i
+    
+    da_i = di * i * (1 - i)
+    da_f = df * f * (1 - f)
+    da_o = do * o * (1 - o)
+    da_g = dg * (1 - g**2)
+
+    da = np.concatenate((da_i, da_f, da_o, da_g), axis = 1)
+    
+    dx = np.dot(da, Wx.T)
+    dWx = np.dot(x.T, da)
+    dprev_h = np.dot(da, Wh.T)
+    dWh = np.dot(prev_h.T, da)
+    db = da.sum(axis=0)
+
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
@@ -313,13 +337,14 @@ def lstm_forward(x, h0, Wx, Wh, b):
     hidden_state = h0
     cell_state =  np.zeros_like(hidden_state)
     hidden_states_list = np.zeros((N, T, H))
+    cache_list = []
     for timestep in range(T):
         x_current = x[:, timestep, :]
-        hidden_state, cell_state, _ = lstm_step_forward(x_current, hidden_state, cell_state, Wx, Wh, b)
+        hidden_state, cell_state, cache = lstm_step_forward(x_current, hidden_state, cell_state, Wx, Wh, b)
         hidden_states_list[:, timestep, :] = hidden_state
+        cache_list.append((hidden_state, cell_state, cache))
 
-    # cache = (hidden_states_list, x, h0, Wx, Wh, b)
-    return hidden_states_list, cache
+    return hidden_states_list, cache_list
 
 
 def lstm_backward(dh, cache):
@@ -342,12 +367,27 @@ def lstm_backward(dh, cache):
     # TODO: Implement the backward pass for an LSTM over an entire timeseries.  #
     # You should use the lstm_step_backward function that you just defined.     #
     #############################################################################
-    pass
+    N, T, H = dh.shape
+    D = cache[0][2][4].shape[1] # TODO - Hardcoding, beautify it
+
+    dprev_h = np.zeros((N, H))
+    dprev_c = np.zeros((N, H))
+    dx = np.zeros((N, T, D))
+    dWx = np.zeros((D, 4*H))
+    dWh = np.zeros((H, 4*H))
+    db = np.zeros((4*H))
+
+    for t in range(T-1, -1, -1):
+        dx[:, t, :], dprev_h, dprev_c, dWx_temp, dWh_temp, db_temp = lstm_step_backward(dprev_h + dh[:, t, :], dprev_c, cache[t][2])
+        dWx += dWx_temp
+        dWh += dWh_temp
+        db += db_temp
+
     ##############################################################################
     #                               END OF YOUR CODE                             #
     ##############################################################################
 
-    return dx, dh0, dWx, dWh, db
+    return dx, dprev_h, dWx, dWh, db
 
 
 def temporal_affine_forward(x, w, b):

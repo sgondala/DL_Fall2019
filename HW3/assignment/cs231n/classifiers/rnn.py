@@ -96,8 +96,10 @@ class CaptioningRNN(object):
         # by one relative to each other because the RNN should produce word (t+1)
         # after receiving word t. The first element of captions_in will be the START
         # token, and the first element of captions_out will be the first word.
+        
         captions_in = captions[:, :-1]
         captions_out = captions[:, 1:]
+        # print(captions[0], captions_in[0], captions_out[0])
 
         # You'll need this
         mask = (captions_out != self._null)
@@ -137,7 +139,18 @@ class CaptioningRNN(object):
         # defined above to store loss and gradients; grads[k] should give the      #
         # gradients for self.params[k].                                            #
         ############################################################################
-        pass
+        
+        h_init, cache_affine = affine_forward(features, W_proj, b_proj)
+        x, cache_word_embedding = word_embedding_forward(captions_in, W_embed)
+        hidden_list, cache_rnn = rnn_forward(x, h_init, Wx, Wh, b)
+        caption_out_ours, cache_temporal_affine = temporal_affine_forward(hidden_list, W_vocab, b_vocab)
+        loss, dcaption_out_ours = temporal_softmax_loss(caption_out_ours, captions_out, mask)
+        
+        dhidden_layer, grads['W_vocab'], grads['b_vocab'] = temporal_affine_backward(dcaption_out_ours, cache_temporal_affine)
+        dx, dh_init, grads['Wx'], grads['Wh'], grads['b'] = rnn_backward(dhidden_layer, cache_rnn)
+        grads['W_embed'] = word_embedding_backward(dx, cache_word_embedding)
+        dx, grads['W_proj'], grads['b_proj'] = affine_backward(dh_init, cache_affine)
+
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################

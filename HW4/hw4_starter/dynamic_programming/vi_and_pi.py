@@ -146,7 +146,31 @@ def value_iteration(P, nS, nA, gamma=0.9, tol=1e-3):
     #####################################################################
     # YOUR IMPLEMENTATION HERE
     #####################################################################
-    pass
+    for _ in range(10000):
+        v_new = value_function.copy()
+        max_delta = 0
+        for s in range(nS):
+            v_max = value_function[s]
+            action_required = -1
+            for a in range(nA):
+                value_here = 0
+                for transition_prob, next_state, reward, terminal in P[s][a]:
+                    # TODO: Can uncomment this out, based on TA's response on Piazza
+                    # if reward == 0:
+                    #     reward = -10
+                    # elif reward == 1:
+                    #     reward = 1000000
+                    value_here += transition_prob * (reward + gamma * value_function[next_state])
+                if value_here > v_max:
+                    v_max = value_here
+                    action_required = a
+                    policy[s] = a
+            v_new[s] = v_max
+            max_delta = max(max_delta, v_max - value_function[s])
+        value_function = v_new
+        # print(max_delta)
+        if max_delta < tol:
+            break
     #####################################################################
     #                             END OF YOUR CODE                      #
     #####################################################################

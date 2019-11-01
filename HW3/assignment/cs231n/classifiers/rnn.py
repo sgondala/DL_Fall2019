@@ -33,6 +33,7 @@ class CaptioningRNN(object):
         - dtype: numpy datatype to use; use float32 for training and float64 for
           numeric gradient checking.
         """
+
         if cell_type not in {'rnn', 'lstm'}:
             raise ValueError('Invalid cell_type "%s"' % cell_type)
 
@@ -99,7 +100,6 @@ class CaptioningRNN(object):
         
         captions_in = captions[:, :-1]
         captions_out = captions[:, 1:]
-        # print(captions[0], captions_in[0], captions_out[0])
 
         # You'll need this
         mask = (captions_out != self._null)

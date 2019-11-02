@@ -53,7 +53,20 @@ def policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-3, DEBUG=False):
     #####################################################################
     # YOUR IMPLEMENTATION HERE
     #####################################################################
-    pass
+    
+    for _ in range(10000):
+        v_new = value_function.copy()
+        max_delta = 0
+        for s in range(nS):
+            a = policy[s]
+            value_here = 0
+            for transition_prob, next_state, reward, terminal in P[s][a]:
+                value_here += transition_prob * (reward + gamma * value_function[next_state])
+            v_new[s] = value_here
+            max_delta = max(max_delta, v_new[s] - value_function[s])
+        value_function = v_new
+        if max_delta < tol:
+            break
     #####################################################################
     #                             END OF YOUR CODE                      #
     #####################################################################
@@ -85,7 +98,17 @@ def policy_improvement(P, nS, nA, value_from_policy, policy, gamma=0.9):
     #####################################################################
     # YOUR IMPLEMENTATION HERE
     #####################################################################
-    pass
+    for s in range(nS):
+        max_value = 0
+        action_for_max = 0
+        for a in range(nA):
+            new_value = 0
+            for transition_prob, next_state, reward, _ in P[s][a]:
+                new_value += transition_prob * (reward + gamma * value_from_policy[s])
+        if new_value > max_value:
+            max_value = new_value
+            action_for_max = a
+        new_policy[s] = action_for_max 
     #####################################################################
     #                             END OF YOUR CODE                      #
     #####################################################################
@@ -116,7 +139,13 @@ def policy_iteration(P, nS, nA, gamma=0.9, tol=10e-3):
     #####################################################################
     # YOUR IMPLEMENTATION HERE
     #####################################################################
-    pass
+    while True:
+        new_value_function = policy_evaluation(P, nS, nA, policy, gamma, tol)
+        new_policy = policy_improvement(P, nS, nA, new_value_function, policy, gamma)
+        if np.all(new_policy == policy):
+            break
+        value_function = new_value_function
+        policy = new_policy
     #####################################################################
     #                             END OF YOUR CODE                      #
     #####################################################################

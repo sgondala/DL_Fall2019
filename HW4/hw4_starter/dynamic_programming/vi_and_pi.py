@@ -1,6 +1,7 @@
 ### MDP Value Iteration and Policy Iteration
 
 import numpy as np
+from random import choice
 import gym
 import time
 from lake_envs import *
@@ -54,16 +55,13 @@ def policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-3, DEBUG=False):
     # YOUR IMPLEMENTATION HERE
     #####################################################################
     
-    for _ in range(10000):
-        v_new = value_function.copy()
-        max_delta = 0
+    for _ in range(1000):
+        v_new = np.zeros(nS)
         for s in range(nS):
             a = policy[s]
-            value_here = 0
             for transition_prob, next_state, reward, terminal in P[s][a]:
-                value_here += transition_prob * (reward + gamma * value_function[next_state])
-            v_new[s] = value_here
-            max_delta = max(max_delta, v_new[s] - value_function[s])
+                v_new[s] += transition_prob * (reward + gamma * value_function[next_state])
+        max_delta = np.max(np.abs(v_new - value_function))
         value_function = v_new
         if max_delta < tol:
             break
@@ -94,21 +92,15 @@ def policy_improvement(P, nS, nA, value_from_policy, policy, gamma=0.9):
     """
 
     new_policy = np.zeros(nS, dtype='int')
-
     #####################################################################
     # YOUR IMPLEMENTATION HERE
     #####################################################################
     for s in range(nS):
-        max_value = 0
-        action_for_max = 0
+        q = np.zeros([nA])
         for a in range(nA):
-            new_value = 0
             for transition_prob, next_state, reward, _ in P[s][a]:
-                new_value += transition_prob * (reward + gamma * value_from_policy[s])
-        if new_value > max_value:
-            max_value = new_value
-            action_for_max = a
-        new_policy[s] = action_for_max 
+                q[a] += transition_prob * (reward + gamma * value_from_policy[next_state])
+        new_policy[s] = choice(np.argwhere(q == q.max()))
     #####################################################################
     #                             END OF YOUR CODE                      #
     #####################################################################
@@ -139,13 +131,22 @@ def policy_iteration(P, nS, nA, gamma=0.9, tol=10e-3):
     #####################################################################
     # YOUR IMPLEMENTATION HERE
     #####################################################################
-    while True:
+    for _ in range(1000):
+        # print("Iterating on policy")
         new_value_function = policy_evaluation(P, nS, nA, policy, gamma, tol)
         new_policy = policy_improvement(P, nS, nA, new_value_function, policy, gamma)
-        if np.all(new_policy == policy):
+        
+        # print("Value", new_value_function.reshape(4,4))
+        # print("Policy", new_policy.reshape(4,4))
+        
+        if(np.all(new_policy == policy)):
+            print("Broken")
             break
-        value_function = new_value_function
-        policy = new_policy
+        # if np.max(np.abs(new_value_function - value_function)) < tol:
+        #     break
+
+        value_function = new_value_function.copy()
+        policy = new_policy.copy()
     #####################################################################
     #                             END OF YOUR CODE                      #
     #####################################################################
@@ -224,7 +225,7 @@ def render_single(env, policy, max_steps=100, show_rendering=True):
     for t in range(max_steps):
         if show_rendering:
             env.render()
-        time.sleep(0.25)
+        # time.sleep(0.25)
         a = policy[ob]
         ob, rew, done, _ = env.step(a)
         episode_reward += rew

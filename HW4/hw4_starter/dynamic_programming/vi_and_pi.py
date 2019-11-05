@@ -100,7 +100,8 @@ def policy_improvement(P, nS, nA, value_from_policy, policy, gamma=0.9):
         for a in range(nA):
             for transition_prob, next_state, reward, _ in P[s][a]:
                 q[a] += transition_prob * (reward + gamma * value_from_policy[next_state])
-        new_policy[s] = choice(np.argwhere(q == q.max()))
+        # new_policy[s] = choice(np.argwhere(q == q.max()))
+        new_policy[s] = np.argmax(q)
     #####################################################################
     #                             END OF YOUR CODE                      #
     #####################################################################

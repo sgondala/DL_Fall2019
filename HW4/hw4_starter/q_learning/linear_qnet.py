@@ -20,7 +20,8 @@ class LinearQNet(nn.Module):
         #     number of actions: env.action_space.n
         #     number of stacked observations in state: config.state_history
         #####################################################################
-        pass
+        H, W, C = env.observation_space.shape
+        self.linear_layer = nn.Linear(H * W * C * config.state_history, env.action_space.n)
         #####################################################################
         #                             END OF YOUR CODE                      #
         #####################################################################
@@ -38,7 +39,10 @@ class LinearQNet(nn.Module):
         #####################################################################
         # TODO: Implement the forward pass, 1-2 lines.
         #####################################################################
-        pass
+        batch_size = len(state)
+        state = state.reshape(batch_size, -1)
+        output = self.linear_layer(state)
+        return output
         #####################################################################
         #                             END OF YOUR CODE                      #
         #####################################################################

@@ -8,7 +8,6 @@ import torch.optim as optim
 
 from core.q_train import QNTrain
 
-
 class DQNTrain(QNTrain):
     """
     Class for training a DQN
@@ -62,7 +61,11 @@ class DQNTrain(QNTrain):
         #####################################################################
         # TODO: Process state to match the return output specified above.
         #####################################################################
-        pass
+        state = torch.from_numpy(state).float()
+        if len(state.shape) == 3:
+            state.unsqueeze_(0)
+        assert len(state.shape) == 4
+        state = state.to(device=self.device)
         #####################################################################
         #                             END OF YOUR CODE                      #
         #####################################################################
@@ -116,7 +119,17 @@ class DQNTrain(QNTrain):
         #       use the done_mask to compute Q_samp(s) from the equation
         #       specified above.
         #####################################################################
-        pass
+
+        q_sample = reward.clone()
+        q_dash_s = self.target_q_net(next_state)
+        q_dash_s_a = q_dash_s.max(1).values
+        
+        q_s = self.q_net(state)
+        q_s_a = torch.gather(q_s, 1, action.view(-1,1)).squeeze(1)
+        done_mask = done_mask.bool()
+        q_sample += ~done_mask * self.config.gamma * q_dash_s_a
+        loss = ((q_sample - q_s_a)**2).mean()
+
         #####################################################################
         #                             END OF YOUR CODE                      #
         #####################################################################
@@ -134,7 +147,7 @@ class DQNTrain(QNTrain):
         # torch.nn.Module.load_state_dict and torch.nn.Module.state_dict
         # This should just take 1-2 lines of code.
         #####################################################################
-        pass
+        self.target_q_net.load_state_dict(self.q_net.state_dict())
         #####################################################################
         #                             END OF YOUR CODE                      #
         #####################################################################
@@ -215,7 +228,21 @@ class DQNTrain(QNTrain):
         #   of the gradients using self.module_grad_norm on self.q_net
         #   AFTER calling backward.
         #####################################################################
-        pass
+        
+        s_batch = self.process_state(s_batch)
+        sp_batch = self.process_state(sp_batch)
+
+        a_batch = torch.from_numpy(a_batch).long().to(self.device)
+        r_batch = torch.from_numpy(r_batch).to(self.device)
+        done_mask_batch = torch.from_numpy(done_mask_batch).to(self.device)
+
+        q_loss = self.forward_loss(s_batch, a_batch, r_batch, sp_batch, done_mask_batch)
+
+        self.optimizer.zero_grad()
+        q_loss.backward()
+        grad_norm_eval = self.module_grad_norm(self.q_net)
+        self.optimizer.step()
+
         #####################################################################
         #                             END OF YOUR CODE                      #
         #####################################################################

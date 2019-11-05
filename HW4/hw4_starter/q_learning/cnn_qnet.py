@@ -18,7 +18,14 @@ class ConvQNet(nn.Module):
         #     number of actions: env.action_space.n
         #     number of stacked observations in state: config.state_history
         #####################################################################
-        pass
+        H, W, C = env.observation_space.shape
+        self.first_layer = nn.Conv2d(C * config.state_history, 16, kernel_size = 8, stride = 4)
+        self.relu1 = nn.ReLU()
+        H_out = (H - (8-1) - 1) // 4 + 1
+        self.second_layer = nn.Conv2d(16, 32, kernel_size = 4, stride = 2)
+        self.relu2 = nn.ReLU()
+        H_out = (H_out - (4-1) -1) // 2 + 1
+        self.linear_layer = nn.Linear(H_out * H_out * 32, env.action_space.n)
         #####################################################################
         #                             END OF YOUR CODE                      #
         #####################################################################
@@ -27,7 +34,16 @@ class ConvQNet(nn.Module):
         #####################################################################
         # TODO: Implement the forward pass.
         #####################################################################
-        pass
+        
+        N = len(state)
+        state = state.transpose(1,3) # N H W C => N C W H
+        output = self.first_layer(state)
+        output = self.relu1(output)
+        output = self.second_layer(output)
+        output = self.relu2(output)
+        output = output.reshape(N, -1)
+        output = self.linear_layer(output)
+        return output
         #####################################################################
         #                             END OF YOUR CODE                      #
         #####################################################################

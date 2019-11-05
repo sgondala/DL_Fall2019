@@ -128,7 +128,7 @@ class DQNTrain(QNTrain):
         q_s_a = torch.gather(q_s, 1, action.view(-1,1)).squeeze(1)
         done_mask = done_mask.bool()
         q_sample += ~done_mask * self.config.gamma * q_dash_s_a
-        loss = ((q_sample - q_s_a)**2).mean()
+        loss = ((q_sample - q_s_a)**2).sum()
 
         #####################################################################
         #                             END OF YOUR CODE                      #
@@ -230,7 +230,9 @@ class DQNTrain(QNTrain):
         #####################################################################
         
         s_batch = self.process_state(s_batch)
+        assert len(s_batch.shape) == 4
         sp_batch = self.process_state(sp_batch)
+        assert len(sp_batch.shape) == 4
 
         a_batch = torch.from_numpy(a_batch).long().to(self.device)
         r_batch = torch.from_numpy(r_batch).to(self.device)

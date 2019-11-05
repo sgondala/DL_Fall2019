@@ -21,6 +21,8 @@ class LinearQNet(nn.Module):
         #     number of stacked observations in state: config.state_history
         #####################################################################
         H, W, C = env.observation_space.shape
+        # print(H, W, C)
+        # assert False
         self.linear_layer = nn.Linear(H * W * C * config.state_history, env.action_space.n)
         #####################################################################
         #                             END OF YOUR CODE                      #

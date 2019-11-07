@@ -62,6 +62,7 @@ class DQNTrain(QNTrain):
         # TODO: Process state to match the return output specified above.
         #####################################################################
         state = torch.from_numpy(state).float()
+        state /= self.config.high
         if len(state.shape) == 3:
             state.unsqueeze_(0)
         assert len(state.shape) == 4
@@ -120,15 +121,10 @@ class DQNTrain(QNTrain):
         #       specified above.
         #####################################################################
 
-        q_sample = reward.clone()
-        q_dash_s = self.target_q_net(next_state)
-        q_dash_s_a = q_dash_s.max(1).values
-        
-        q_s = self.q_net(state)
-        q_s_a = torch.gather(q_s, 1, action.view(-1,1)).squeeze(1)
-        done_mask = done_mask.bool()
-        q_sample += ~done_mask * self.config.gamma * q_dash_s_a
-        loss = ((q_sample - q_s_a)**2).sum()
+        q_dash_s_a = self.target_q_net(next_state).max(1).values
+        q_s_a = self.q_net(state).gather(1, action.view(-1,1)).squeeze()
+        q_sample = reward + (1 - done_mask) * self.config.gamma * q_dash_s_a
+        loss = ((q_sample - q_s_a)**2).mean()
 
         #####################################################################
         #                             END OF YOUR CODE                      #

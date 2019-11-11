@@ -26,7 +26,7 @@ class config():
 
     # nature paper hyper params
     nsteps_train       = 5000000
-    batch_size         = 32
+    batch_size         = 64
     buffer_size        = 1000000
     target_update_freq = 10000
     gamma              = 0.99
@@ -34,8 +34,8 @@ class config():
     state_history      = 4
     optim_type         = "rmsprop"
     skip_frame         = 4
-    lr_begin           = 0.00025
-    lr_end             = 0.00005
+    lr_begin           = 0.0003
+    lr_end             = 0.00025
     lr_nsteps          = nsteps_train/2
     eps_begin          = 1
     eps_end            = 0.1

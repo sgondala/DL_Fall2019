@@ -62,7 +62,7 @@ if __name__ == "__main__":
     number_of_iterations = len(data) // 32
 
     start_model = SimpleFusionModel(300, args.hidden_layer, pretrained_embeddings = embedding_vectors).to(device)
-    start_criterion = nn.CrossEntropyLoss()
+    start_criterion = nn.CrossEntropyLoss(reduction='sum')
     start_optimizer = optim.Adam(start_model.parameters(), lr=args.lr)
     
     number_of_iterations = args.num_epochs * number_of_iterations
@@ -81,7 +81,7 @@ if __name__ == "__main__":
         start_model.zero_grad()
 
     end_model = SimpleFusionModel(300, args.hidden_layer, pretrained_embeddings = embedding_vectors).to(device)
-    end_criterion = nn.CrossEntropyLoss()
+    end_criterion = nn.CrossEntropyLoss(reduction='sum')
     end_optimizer = optim.Adam(end_model.parameters(), lr=args.lr)
 
     for iteration_number in tqdm(range(number_of_iterations)):

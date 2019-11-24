@@ -38,6 +38,9 @@ parser.add_argument(
 parser.add_argument(
     "--train-percentage", type=int, default=10, help="Percentage of data to train on"
 )
+parser.add_argument(
+    "--distil", type=bool, default=False, help="Use distil bert"
+)
 
 # Reproducibility
 np.random.seed(42)
@@ -52,17 +55,24 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print(args)
 
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+    if distil == True:
+        tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
+        model = DistilBertForQuestionAnswering.from_pretrained('distilbert-base-uncased')
+    else:
+        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        model = BertForQuestionAnswering.from_pretrained('bert-base-uncased')
+    
+
     print('Loading dataset')
-    dataset = load_and_cache_examples(args.train_path, tokenizer)
+    dataset = load_and_cache_examples(args.train_path, args.distil, tokenizer)
     print('Finished loading dataset')
-    model = BertForQuestionAnswering.from_pretrained('bert-base-uncased')
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     # Training only on 10% of data
     indices = list(np.random.randint(len(dataset), size=len(dataset) // args.train_percentage))
-    sampler = SubsetRandomSampler(indices)
+    sampler = RandomSampler(dataset)
     train_dataloader = DataLoader(dataset, sampler=sampler, batch_size=args.batch_size)
-    
+    loss_scalar = 'Bert base loss' if distill is False else 'Distil bert base loss'
+
     for _ in range(args.num_epochs):
         iterator = tqdm(iter(train_dataloader))
         for batch_num, batch in tqdm(enumerate(train_dataloader)):
@@ -77,6 +87,3 @@ if __name__ == "__main__":
     
     writer.close()
     torch.save(model.state_dict(), args.out_path + args.model + '.pth')
-
-    
-

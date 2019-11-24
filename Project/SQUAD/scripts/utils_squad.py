@@ -1020,13 +1020,16 @@ def _compute_softmax(scores):
     return probs
 
 
-def load_and_cache_examples(filename, tokenizer, evaluate=False):
+def load_and_cache_examples(filename, distil, tokenizer, evaluate=False):
     """
     This function is adapted from hugging face's run_squad.py
     """
     # Load data features from cache or dataset file
     print(filename)
     cached_features_file = os.path.join(os.path.dirname(filename), 'cached_' + 'train' if not evaluate else 'dev')
+    if distil == True
+        cached_features_file += '_distil'
+
     if os.path.exists(cached_features_file):
         print("Loading features from cached file ", cached_features_file)
         features = torch.load(cached_features_file)

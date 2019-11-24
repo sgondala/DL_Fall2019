@@ -35,6 +35,9 @@ parser.add_argument(
 parser.add_argument(
     "--batch-size", type=int, default=3, help="Number of epochs"
 )
+parser.add_argument(
+    "--train-percentage", type=int, default=10, help="Percentage of data to train on"
+)
 
 # Reproducibility
 np.random.seed(42)
@@ -55,13 +58,14 @@ if __name__ == "__main__":
     print('Finished loading dataset')
     model = BertForQuestionAnswering.from_pretrained('bert-base-uncased')
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
-    sampler = RandomSampler(dataset)
+    # Training only on 10% of data
+    indices = list(np.random.randint(len(dataset), size=len(dataset) // args.train_percentage))
+    sampler = SubsetRandomSampler(indices)
     train_dataloader = DataLoader(dataset, sampler=sampler, batch_size=args.batch_size)
     
     for _ in range(args.num_epochs):
         iterator = tqdm(iter(train_dataloader))
-        # for batch_num, batch in tqdm(enumerate(train_dataloader)):
-        for batch_num, batch in enumerate(iterator):
+        for batch_num, batch in tqdm(enumerate(train_dataloader)):
             output = model(batch[0], attention_mask=batch[1], start_positions=batch[3], end_positions=batch[4])
             loss = output[0]
             writer.add_scalar('Bert base loss', loss, batch_num)

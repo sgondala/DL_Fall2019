@@ -5,6 +5,7 @@ from tqdm import tqdm
 from scripts.utils import *
 from models.SimpleFusionModel import SimpleFusionModel
 import argparse
+from torch.utils.tensorboard import SummaryWriter
 
 if torch.cuda.is_available():
     device = torch.device('cuda', 0)
@@ -47,6 +48,8 @@ torch.cuda.manual_seed_all(42)
 torch.backends.cudnn.benchmark = False
 torch.backends.cudnn.deterministic = True
 
+writer = SummaryWriter()
+
 if __name__ == "__main__":
     args = parser.parse_args()
     print(args)
@@ -72,8 +75,9 @@ if __name__ == "__main__":
         # print(start_tokens)
         start_out = start_model(questions, contexts)
         start_loss = start_criterion(start_out, start_tokens)
-        if iteration_number % 100 == 0:
-            print("Start loss", start_loss.data)
+        writer.add_scalar('Start loss', start_loss, iteration_number)
+        #if iteration_number % 100 == 0:
+        # print("Start loss", start_loss.data)
         start_loss.backward()
         nn.utils.clip_grad_norm_(start_model.parameters(), 2.0)
         start_optimizer.step()

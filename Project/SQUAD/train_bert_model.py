@@ -39,7 +39,7 @@ parser.add_argument(
     "--train-percentage", type=int, default=10, help="Percentage of data to train on"
 )
 parser.add_argument(
-    "--distil", type=bool, default=False, help="Use distil bert"
+    "--distil", type=bool, default=True, help="Use distil bert"
 )
 
 # Reproducibility
@@ -55,7 +55,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print(args)
 
-    if distil == True:
+    if args.distil == True:
         tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
         model = DistilBertForQuestionAnswering.from_pretrained('distilbert-base-uncased')
     else:
@@ -67,18 +67,19 @@ if __name__ == "__main__":
     dataset = load_and_cache_examples(args.train_path, args.distil, tokenizer)
     print('Finished loading dataset')
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    
     # Training only on 10% of data
     indices = list(np.random.randint(len(dataset), size=len(dataset) // args.train_percentage))
-    sampler = RandomSampler(dataset)
+    sampler = SubsetRandomSampler(indices)
     train_dataloader = DataLoader(dataset, sampler=sampler, batch_size=args.batch_size)
-    loss_scalar = 'Bert base loss' if distill is False else 'Distil bert base loss'
+    loss_scalar = 'Bert base loss' if args.distil is False else 'Distil bert base loss'
 
     for _ in range(args.num_epochs):
         iterator = tqdm(iter(train_dataloader))
-        for batch_num, batch in tqdm(enumerate(train_dataloader)):
+        for batch_num, batch in tqdm(enumerate(iterator)):
             output = model(batch[0], attention_mask=batch[1], start_positions=batch[3], end_positions=batch[4])
             loss = output[0]
-            writer.add_scalar('Bert base loss', loss, batch_num)
+            writer.add_scalar(loss_scalar, loss, batch_num)
             loss.backward()
             nn.utils.clip_grad_norm_(model.parameters(), 2.0)
             optimizer.step()

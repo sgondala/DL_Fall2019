@@ -1027,7 +1027,7 @@ def load_and_cache_examples(filename, distil, tokenizer, evaluate=False):
     # Load data features from cache or dataset file
     print(filename)
     cached_features_file = os.path.join(os.path.dirname(filename), 'cached_' + 'train' if not evaluate else 'dev')
-    if distil == True
+    if distil == True:
         cached_features_file += '_distil'
 
     if os.path.exists(cached_features_file):

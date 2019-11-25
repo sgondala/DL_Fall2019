@@ -52,8 +52,11 @@ torch.backends.cudnn.deterministic = True
 
 writer = SummaryWriter()
 
-def save_checkpoint():
-
+def save_checkpoint(args, checkpoint_number):
+    output_file_name = args.out_path + args.model + "_" + str(checkpoint_number) + "_" + str(args.train_percentage)
+    if args.distil == True:
+        output_file_name += "_distil"
+    torch.save(model.state_dict(), output_file_name + '.pth')
 
 if __name__ == "__main__":
     args = parser.parse_args()
@@ -66,7 +69,7 @@ if __name__ == "__main__":
 
     if args.model == 'BertAnswerClassification': # Classification case
         model = BertAnswerClassification(distil = False) # Distil version not available yet
-    else if args.model == 'BertQABase': # Question answering case
+    elif args.model == 'BertQABase': # Question answering case
         if args.distil == True:
             model = DistilBertForQuestionAnswering.from_pretrained('distilbert-base-uncased')
         else:
@@ -86,10 +89,11 @@ if __name__ == "__main__":
 
     if args.model == 'BertQABase':
         loss_scalar = 'Bert base loss' if args.distil is False else 'Distil bert base loss'
-    else if args.model == 'BertAnswerClassification':
+    elif args.model == 'BertAnswerClassification':
         loss_scalar = 'Bert classification loss' if args.distil is False else 'Distil bert classification loss'
 
-    for _ in range(args.num_epochs):
+    for epoch_number in range(args.num_epochs):
+        save_checkpoint(args, epoch_number)
         iterator = tqdm(iter(train_dataloader))
         for batch_num, batch in tqdm(enumerate(iterator)):
             output = model(batch[0], attention_mask=batch[1], start_positions=batch[3], end_positions=batch[4])
@@ -100,9 +104,7 @@ if __name__ == "__main__":
             optimizer.step()
             optimizer.zero_grad()
             model.zero_grad()
-    
+
+    save_checkpoint(args, args.num_epochs)
     writer.close()
-    output_file_name = args.out_path + "_" + args.model + "_" + str(args.num_epochs) + "_" + str(args.train_percentage)
-    if distil == True:
-        output_file_name += "_distil"
-    torch.save(model.state_dict(), output_file_name + '.pth')
+    

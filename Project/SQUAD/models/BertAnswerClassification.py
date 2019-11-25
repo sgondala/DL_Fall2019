@@ -19,6 +19,6 @@ class BertAnswerClassification(nn.Module):
         1 otherwise 
         """
         bool_tensor = (start_positions == 0) & (end_positions == 0)
-        labels_tensor = bool_tensor.type(torch.int)
+        labels_tensor = bool_tensor.type(torch.long)
         return self.bert_model(input_ids, attention_mask = attention_mask, next_sentence_label = labels_tensor)
 

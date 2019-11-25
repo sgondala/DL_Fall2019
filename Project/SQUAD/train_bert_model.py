@@ -10,6 +10,7 @@ from scripts.utils_squad_evaluate import *
 from scripts.utils_squad import *
 from transformers import *
 from torch.utils.data import *
+from models.BertAnswerClassification import BertAnswerClassification
 
 if torch.cuda.is_available():
     device = torch.device('cuda', 0)
@@ -18,7 +19,7 @@ else:
 
 parser = argparse.ArgumentParser("SQUAD parser")
 parser.add_argument(
-    "--model", default='BertQABase', help="Model"
+    "--model", default=None, help="Model"
 )
 parser.add_argument(
     "--num-epochs", type=int, default=2, help="Number of epochs"
@@ -39,7 +40,7 @@ parser.add_argument(
     "--train-percentage", type=int, default=10, help="Percentage of data to train on"
 )
 parser.add_argument(
-    "--distil", type=bool, default=True, help="Use distil bert"
+    "--distil", type=bool, default=False, help="Use distil bert"
 )
 
 # Reproducibility
@@ -51,28 +52,42 @@ torch.backends.cudnn.deterministic = True
 
 writer = SummaryWriter()
 
+def save_checkpoint():
+
+
 if __name__ == "__main__":
     args = parser.parse_args()
     print(args)
 
     if args.distil == True:
         tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
-        model = DistilBertForQuestionAnswering.from_pretrained('distilbert-base-uncased')
     else:
         tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-        model = BertForQuestionAnswering.from_pretrained('bert-base-uncased')
-    
 
+    if args.model == 'BertAnswerClassification': # Classification case
+        model = BertAnswerClassification(distil = False) # Distil version not available yet
+    else if args.model == 'BertQABase': # Question answering case
+        if args.distil == True:
+            model = DistilBertForQuestionAnswering.from_pretrained('distilbert-base-uncased')
+        else:
+            model = BertForQuestionAnswering.from_pretrained('bert-base-uncased')
+    else:
+        assert False, 'Unknown model'
+    
     print('Loading dataset')
     dataset = load_and_cache_examples(args.train_path, args.distil, tokenizer)
     print('Finished loading dataset')
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     
-    # Training only on 10% of data
-    indices = list(np.random.randint(len(dataset), size=len(dataset) // args.train_percentage))
+    # By default only on 10% of data
+    indices = list(np.random.choice(len(dataset), size=(len(dataset) * args.train_percentage) // 100, replace=False))
     sampler = SubsetRandomSampler(indices)
     train_dataloader = DataLoader(dataset, sampler=sampler, batch_size=args.batch_size)
-    loss_scalar = 'Bert base loss' if args.distil is False else 'Distil bert base loss'
+
+    if args.model == 'BertQABase':
+        loss_scalar = 'Bert base loss' if args.distil is False else 'Distil bert base loss'
+    else if args.model == 'BertAnswerClassification':
+        loss_scalar = 'Bert classification loss' if args.distil is False else 'Distil bert classification loss'
 
     for _ in range(args.num_epochs):
         iterator = tqdm(iter(train_dataloader))
@@ -87,4 +102,7 @@ if __name__ == "__main__":
             model.zero_grad()
     
     writer.close()
-    torch.save(model.state_dict(), args.out_path + args.model + '.pth')
+    output_file_name = args.out_path + "_" + args.model + "_" + str(args.num_epochs) + "_" + str(args.train_percentage)
+    if distil == True:
+        output_file_name += "_distil"
+    torch.save(model.state_dict(), output_file_name + '.pth')

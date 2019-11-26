@@ -1030,18 +1030,18 @@ def load_and_cache_examples(filename, distil, tokenizer, evaluate=False):
     if distil == True:
         cached_features_file += '_distil'
 
+    squad_examples = read_squad_examples(filename, not evaluate, True)
     if os.path.exists(cached_features_file):
         print("Loading features from cached file ", cached_features_file)
         features = torch.load(cached_features_file)
     else:
         print("Creating features from dataset file at ", filename)
-        squad_examples = read_squad_examples(filename, True, True)
         features = convert_examples_to_features(squad_examples, 
                 tokenizer=tokenizer, 
                 max_seq_length=384, 
                 doc_stride=128, 
                 max_query_length=64, 
-                is_training=True)
+                is_training=not evaluate)
         print("Saving features into cached file %s", cached_features_file)
         torch.save(features, cached_features_file)
 
@@ -1061,4 +1061,7 @@ def load_and_cache_examples(filename, distil, tokenizer, evaluate=False):
         dataset = TensorDataset(all_input_ids, all_input_mask, all_segment_ids,
                                 all_start_positions, all_end_positions,
                                 all_cls_index, all_p_mask)
-    return dataset
+    if evaluate:
+        return dataset, squad_examples, features
+    else:
+        return dataset

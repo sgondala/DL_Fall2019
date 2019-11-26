@@ -1,16 +1,15 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from tqdm import tqdm
-from scripts.utils import *
-from models.SimpleFusionModel import SimpleFusionModel
 import argparse
+from tqdm import tqdm
+from models.BertAnswerClassification import BertAnswerClassification
 from torch.utils.tensorboard import SummaryWriter
 from scripts.utils_squad_evaluate import *
 from scripts.utils_squad import *
 from transformers import *
 from torch.utils.data import *
-from models.BertAnswerClassification import BertAnswerClassification
+from scripts.utils import *
 
 if torch.cuda.is_available():
     device = torch.device('cuda', 0)
@@ -77,6 +76,7 @@ if __name__ == "__main__":
     else:
         assert False, 'Unknown model'
     
+    model.train()
     print('Loading dataset')
     dataset = load_and_cache_examples(args.train_path, args.distil, tokenizer)
     print('Finished loading dataset')

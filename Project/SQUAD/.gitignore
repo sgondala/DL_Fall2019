@@ -109,7 +109,6 @@ dlt_venv/
 *.pkl
 #data
 datsets/
-results/
 # other
 ./testing.ipynb
 *.zip

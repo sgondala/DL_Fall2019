@@ -29,9 +29,6 @@ parser.add_argument(
     "--batch-size", type=int, default=3, help="Number of epochs"
 )
 parser.add_argument(
-    "--distil", type=bool, default=False, help="Use distil bert"
-)
-parser.add_argument(
     "--model-path", default=None, help="Path to saved model state"
 )
 
@@ -46,25 +43,26 @@ if __name__ == "__main__":
     args = parser.parse_args()
     print(args)
 
-    if args.distil == True:
+    if args.model == 'DistilBertQABase':
+        distil = True
         tokenizer = DistilBertTokenizer.from_pretrained('distilbert-base-uncased')
     else:
+        distil = False
         tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
     if args.model == 'BertAnswerClassification': # Classification case
         model = BertAnswerClassification(distil = False) # Distil version not available yet
     elif args.model == 'BertQABase': # Question answering case
-        if args.distil == True:
-            model = DistilBertForQuestionAnswering.from_pretrained('distilbert-base-uncased')
-        else:
-            model = BertForQuestionAnswering.from_pretrained('bert-base-uncased')
+        model = BertForQuestionAnswering.from_pretrained('bert-base-uncased')
+    elif args.model == 'DistilBertQABase':
+        model = DistilBertForQuestionAnswering.from_pretrained('distilbert-base-uncased')
     else:
         assert False, 'Unknown model'
 
-    model.load_state_dict(torch.load(args.start_path))
+    model.load_state_dict(torch.load(args.model_path))
     model.eval()
     print('Loading dataset')
-    dataset, examples, features = load_and_cache_examples(args.file_path, args.distil, tokenizer, evaluate=True)
+    dataset, examples, features = load_and_cache_examples(args.file_path, distil, tokenizer, evaluate=True)
     print('Finished loading dataset')
 
     sampler = SequentialSampler(dataset)
@@ -79,16 +77,16 @@ if __name__ == "__main__":
         example_indices = batch[3]
         for i, example_index in enumerate(example_indices):
             unique_index = int(features[example_index.item()].unique_id)
-            result_here = RawResult(unique_id=unique_index, start_logits=outputs[0][i], end_logits=outputs[1][i])
+            result_here = RawResult(unique_id=unique_index, start_logits=output[0][i], end_logits=output[1][i])
             results.append(result_here)
     
     prediction_file = os.path.join(args.out_path, "predictions.json")
     nbest_file = os.path.join(args.out_path, "nbest_predictions.json")
-    null_log_odds_file = os.path.join(args.output_path, "null_odds.json")
+    null_log_odds_file = os.path.join(args.out_path, "null_odds.json")
     
     write_predictions(examples, features, results, n_best_size=20,
-                    max_answer_length=30, do_lower_case=True, prediction_file,
-                    nbest_file, null_log_odds_file, verbose_logging=False,
+                    max_answer_length=30, do_lower_case=True, output_prediction_file=prediction_file, 
+                    output_nbest_file=nbest_file, output_null_log_odds_file=null_log_odds_file, verbose_logging=False,
                     version_2_with_negative=True, null_score_diff_threshold=0)
 
     # Evaluate with the official SQuAD script
@@ -96,7 +94,7 @@ if __name__ == "__main__":
                                  pred_file=output_prediction_file,
                                  na_prob_file=output_null_log_odds_file)
     results = evaluate_on_squad(evaluate_options)
-    return results
+    print(results)
 
 
 

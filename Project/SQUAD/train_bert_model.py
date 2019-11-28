@@ -41,6 +41,10 @@ parser.add_argument(
 parser.add_argument(
     "--distil", type=bool, default=False, help="Use distil bert"
 )
+parser.add_argument(
+    "--saved-model", default=None, help="Path to saved model"
+)
+
 
 # Reproducibility
 np.random.seed(42)
@@ -76,6 +80,12 @@ if __name__ == "__main__":
     else:
         assert False, 'Unknown model'
     
+    if args.saved_model is not None:
+        print("Loading presaved weights")
+        model.load_state_dict(torch.load(args.saved_model))
+    else:
+        print("Training from scratch")
+
     model.train()
     print('Loading dataset')
     dataset = load_and_cache_examples(args.train_path, args.distil, tokenizer)

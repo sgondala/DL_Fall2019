@@ -18,7 +18,7 @@ else:
 
 parser = argparse.ArgumentParser("SQUAD parser")
 parser.add_argument(
-    "--model", default=None, help="Model"
+    "--model", action='append', default=None, help="Model"
 )
 parser.add_argument(
     "--num-epochs", type=int, default=2, help="Number of epochs"
@@ -42,7 +42,7 @@ parser.add_argument(
     "--distil", type=bool, default=False, help="Use distil bert"
 )
 parser.add_argument(
-    "--saved-model", default=None, help="Path to saved model"
+    "--saved-model", action='append', default=None, help="Path to saved model"
 )
 
 

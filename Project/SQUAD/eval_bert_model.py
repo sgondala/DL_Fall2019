@@ -67,7 +67,7 @@ if __name__ == "__main__":
         model.eval()
     
     print('Loading dataset')
-    dataset, examples, features = load_and_cache_examples(args.file_path, distil, tokenizer, evaluate=True)
+    dataset, examples, features = load_and_cache_examples(args.file_path, False, tokenizer, evaluate=True)
     print('Finished loading dataset')
 
     sampler = SequentialSampler(dataset)
